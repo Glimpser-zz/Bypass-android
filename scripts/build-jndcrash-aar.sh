@@ -57,14 +57,33 @@ fi
 TOOLCHAIN="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
 [ -f "$TOOLCHAIN" ] || die "no cmake toolchain in $ANDROID_NDK_HOME"
 
-# --- locate cmake -----------------------------------------------------------
+# --- locate ninja and cmake -------------------------------------------------
+# Resolve ninja first: the SDK's cmake package ships cmake and ninja side by
+# side, so putting ninja's directory on PATH also makes cmake resolve there.
+# Looking up cmake first picks a system cmake with no ninja beside it.
+NINJA=$(command -v ninja || true)
+if [ -z "$NINJA" ]; then
+  for candidate in "$(dirname "$ANDROID_NDK_HOME")"/../cmake/*/bin/ninja; do
+    if [ -x "$candidate" ]; then NINJA="$candidate"; break; fi
+  done
+fi
+[ -n "$NINJA" ] && export PATH="$(dirname "$NINJA"):$PATH"
+
 CMAKE=$(command -v cmake || true)
 if [ -z "$CMAKE" ]; then
-  CMAKE=$(ls -d "$(dirname "$ANDROID_NDK_HOME")"/../cmake/*/bin/cmake 2>/dev/null | sort -V | tail -1 || true)
+  for candidate in "$(dirname "$ANDROID_NDK_HOME")"/../cmake/*/bin/cmake; do
+    if [ -x "$candidate" ]; then CMAKE="$candidate"; break; fi
+  done
 fi
-[ -n "$CMAKE" ] || die "cmake not found (install the SDK cmake package)"
-# cmake's bin dir also holds ninja, which `-G Ninja` needs
-export PATH="$(dirname "$CMAKE"):$PATH"
+[ -n "$CMAKE" ] || die "cmake not found (sdkmanager \"cmake;3.22.1\")"
+
+if [ -n "$NINJA" ]; then
+  GENERATOR="Ninja"
+else
+  # works anywhere, but slower and a different code path; safety net only
+  echo "warning: ninja not found, falling back to Unix Makefiles" >&2
+  GENERATOR="Unix Makefiles"
+fi
 
 # --- fetch the source -------------------------------------------------------
 SRC="${JNDCRASH_SRC:-$REPO_ROOT/scripts/.jndcrash-src}"
@@ -83,7 +102,7 @@ mkdir -p "$BUILD_ROOT"
 : > "$BUILD_LOG"
 for abi in $ABIS; do
   echo "building libjndcrash.so for $abi"
-  if ! cmake -S "$SRC" -B "$BUILD_ROOT/$abi" -G Ninja \
+  if ! cmake -S "$SRC" -B "$BUILD_ROOT/$abi" -G "$GENERATOR" \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DANDROID_ABI="$abi" \
         -DANDROID_PLATFORM="android-$MIN_API" \

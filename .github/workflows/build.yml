@@ -245,7 +245,7 @@ jobs:
             echo "native library restored from cache"
             exit 0
           fi
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;23.1.7779620" >/dev/null
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;23.1.7779620" "cmake;3.22.1" >/dev/null
           ANDROID_NDK_HOME=$ANDROID_HOME/ndk/23.1.7779620 ./scripts/build-jndcrash-aar.sh
 
       - name: Build APK
