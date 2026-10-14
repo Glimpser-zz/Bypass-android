@@ -338,8 +338,11 @@ android {
         throw new GradleException('signing.properties not found!')
     }
 
-    // For android 14 support we have to use ndk r17c or lower
-    ndkVersion '17.2.4988734'
+    // r17c upstream (API 14); r23 on Apple Silicon, which has no r17 host
+    // toolchain and needs GNUMAKE=/usr/bin/make.
+    def appleSilicon = System.getProperty('os.name').toLowerCase().contains('mac') &&
+            System.getProperty('os.arch') == 'aarch64'
+    ndkVersion(appleSilicon ? '23.1.7779620' : '17.2.4988734')
     externalNativeBuild {
         ndkBuild {
             // Path to the tun2socks NDK build script
@@ -354,7 +357,11 @@ dependencies {
     implementation files('libs/achartengine-1.0.0.jar')
     implementation files('libs/snakeyaml-1.10-android.jar')
     implementation files('libs/ca.psiphon.aar')
-    implementation files('libs/jndcrash-release.aar')
+    // The .so are rebuilt for 16 KB page alignment by scripts/build-jndcrash-aar.sh;
+    // otherwise fall back to the prebuilt AAR. Kept in .native/, not buildDir, so
+    // that `gradlew clean` cannot delete it mid-build.
+    def jndcrashAar = file("${rootDir}/.native/jndcrash-release.aar")
+    implementation files(jndcrashAar.exists() ? jndcrashAar : file('libs/jndcrash-release.aar'))
 
     implementation project(':tray')
 

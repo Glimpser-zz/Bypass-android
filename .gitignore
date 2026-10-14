@@ -139,9 +139,35 @@ build.properties
 app/.cxx
 
 .env.secrets
+.env.secrets.*
 EmbeddedValues.java
 signing.properties
 app/src/main/assets/GeoLite2-Country.mmdb
 fetch_server_list.py
 server_entries.txt
 app/libs/ca.psiphon.aar
+app/libs/shirokhorshid-xray.aar
+app/libs/shirokhorshid-core.aar
+app/src/main/assets/xray/*.dat
+
+# Local debug and inspection artifacts
+debug.keystore
+Dockerfile.debug
+.dockerignore
+.tmp_*.jar
+.tmp_jar_extract/
+__pycache__/
+bunny_server_entries.txt
+decoded_server_entries_*.txt
+bpb.txt
+
+server_entries.fetched.txt
+
+scripts/.jndcrash-src/
+scripts/.venv*/
+scripts/__pycache__/
+
+official_embedded_server_entries_*.txt
+extra-data/
+.native/
+
