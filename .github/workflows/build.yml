@@ -1,4 +1,5 @@
 name: Build & Release
+# CI trigger verification after repository Actions was enabled.
 
 on:
   push:
