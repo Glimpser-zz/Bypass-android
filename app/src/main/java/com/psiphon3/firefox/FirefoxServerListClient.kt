@@ -50,7 +50,7 @@ class FirefoxServerListClient(
                         val protocols = server.optJSONArray("protocols")
                         var host = ""
                         var port = 0
-                        if (protocols != null) {
+                        if (protocols != null && protocols.length() > 0) {
                             for (pi in 0 until protocols.length()) {
                                 val protocol = protocols.optJSONObject(pi) ?: continue
                                 if (protocol.optString("name") != "connect") continue
