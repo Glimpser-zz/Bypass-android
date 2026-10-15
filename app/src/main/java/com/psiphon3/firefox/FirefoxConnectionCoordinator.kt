@@ -56,8 +56,11 @@ class FirefoxConnectionCoordinator(
             )
         }
 
+        // Avoid serially waiting on every endpoint in a large country list.
+        // The caller can retry to get a different randomized sample.
+        val attempts = candidates.shuffled().take(MAX_ENDPOINT_ATTEMPTS)
         var lastFailure: Exception? = null
-        for (candidate in candidates.shuffled()) {
+        for (candidate in attempts) {
             try {
                 val session = factory.connect(candidate, ready.proxyPass)
                 return@withContext Result.Connected(candidate, session)
@@ -69,9 +72,13 @@ class FirefoxConnectionCoordinator(
         }
 
         Result.Failed(
-            "Could not establish HTTP/2 to any of ${candidates.size} Mozilla VPN endpoints" +
+            "Could not establish HTTP/2 to any of ${attempts.size} attempted Mozilla VPN endpoints" +
                 (lastFailure?.message?.let { ": $it" } ?: ""),
             true,
         )
+    }
+
+    private companion object {
+        const val MAX_ENDPOINT_ATTEMPTS = 4
     }
 }
