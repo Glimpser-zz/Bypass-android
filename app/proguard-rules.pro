@@ -25,3 +25,14 @@
 -keep class com.psiphon3.VpnManager {
     public static void logTun2Socks(java.lang.String, java.lang.String, java.lang.String);
 }
+
+
+# Netty references these integrations reflectively; they are optional at runtime.
+# The transport uses the Android/JDK TLS provider, not native tcnative or Jetty ALPN.
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.eclipse.jetty.alpn.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn org.slf4j.**
+-dontwarn reactor.blockhound.**
