@@ -129,10 +129,6 @@ class GuardianControlPlane(
     companion object {
         const val DEFAULT_ENDPOINT = "https://vpn.mozilla.org"
 
-        private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .callTimeout(30, TimeUnit.SECONDS)
-            .build()
+        private fun defaultClient(): OkHttpClient = FirefoxControlPlaneHttp.client
     }
 }
