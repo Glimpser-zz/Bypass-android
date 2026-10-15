@@ -37,8 +37,8 @@
         android:hardwareAccelerated="true"
         android:allowBackup="false"
         android:fullBackupContent="false"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/ic_aetherlink_launcher"
+        android:roundIcon="@drawable/ic_aetherlink_launcher"
         android:theme="@style/Theme.Psiphon"
         android:supportsRtl="true"
         android:label="@string/app_name"
@@ -71,8 +71,8 @@
         <activity-alias
             android:name=".LauncherDefault"
             android:label="@string/app_name"
-            android:icon="@mipmap/ic_launcher"
-            android:roundIcon="@mipmap/ic_launcher_round"
+            android:icon="@drawable/ic_aetherlink_launcher"
+            android:roundIcon="@drawable/ic_aetherlink_launcher"
             android:targetActivity=".MainActivity"
             android:exported="true"
             android:enabled="true">
