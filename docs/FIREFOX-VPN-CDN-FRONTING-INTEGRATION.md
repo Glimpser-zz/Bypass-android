@@ -89,3 +89,10 @@ The next implementation stage needs three explicit lifecycle pieces before UI ex
 3. A stop/revoke/network-change lifecycle that closes accepted sockets, the listener, HTTP/2 streams, and the upstream session without leaving traffic routed into a dead port.
 
 The SOCKS listener must bind only to loopback, and the app must not advertise a connected VPN until the Android VPN interface, listener, and upstream session are all ready. This stage has not yet been implemented or tested; the current coordinator only opens the upstream HTTP/2 session.
+
+
+## Loopback SOCKS5 adapter status
+
+The branch now contains `FirefoxH2Socks5Server`, a loopback-only SOCKS5 CONNECT listener that opens a stream through an already-connected `UpstreamSession` and relays TCP bytes. `FirefoxConnectionCoordinator.connectWithSocks5()` combines upstream setup with listener startup and returns the listener/port for an eventual tunnel owner to manage.
+
+This is an intermediate transport milestone only. The SOCKS5 listener currently supports TCP CONNECT (not arbitrary UDP); DNS behavior depends on the existing tun2socks configuration. It has not been compiled or exercised against a real Guardian endpoint. The current Bypass `TunnelManager` does not yet call `connectWithSocks5()`, establish a Firefox-only tunnel lifecycle, or pass this listener port to `VpnManager.routeThroughTunnel()`. Do not expose this as a working VPN mode until those pieces and shutdown/error handling are integrated and tested.
