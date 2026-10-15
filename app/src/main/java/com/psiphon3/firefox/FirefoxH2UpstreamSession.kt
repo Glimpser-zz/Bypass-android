@@ -2,7 +2,7 @@ package com.psiphon3.firefox
 
 import android.os.Build
 import com.psiphon3.BuildConfig
-import android.util.Log
+import com.psiphon3.firefox.FirefoxLog
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
@@ -164,7 +164,7 @@ class H2UpstreamSession(
     override fun updateBearerToken(token: String) {
         if (token.isBlank() || token == currentBearerToken) return
         currentBearerToken = token
-        Log.i(TAG, 
+        FirefoxLog.i(
             TAG,
             "proxy pass swapped into the live session; the existing HTTP/2 tunnel keeps running and " +
                 "subsequent flows authenticate with the new pass",
@@ -190,7 +190,7 @@ class H2UpstreamSession(
             }
             val stranded = activeStreams.get()
             if (stranded > 0) {
-                Log.w(TAG, 
+                AppLogger.w(
                     TAG,
                     "a swapped-out upstream session has moved no data for " +
                         "${DRAIN_IDLE_TIMEOUT_MS / 1_000}s with $stranded flow(s) still open; closing it so its " +
@@ -269,7 +269,7 @@ class H2UpstreamSession(
                     runCatching {
                         FirefoxControlPlaneHttp.socketProtector?.invoke(ch.publicJavaChannel().socket())
                     }.onFailure {
-                        com.vauth.foxyvpn.data.Log.e(TAG, TAG, "failed to protect netty socket", it)
+                        com.vauth.foxyvpn.data.AppLogger.e(TAG, "failed to protect netty socket", it)
                     }
 
                     upstreamProxy?.let { proxy -> ch.pipeline().addLast(buildProxyHandler(proxy)) }
@@ -350,7 +350,7 @@ class H2UpstreamSession(
                             val detail = "upstream channel to $upstreamHost:$upstreamPort became inactive " +
                                 "(local=${ctx.channel().localAddress()})"
 
-                            if (closing) Log.d(TAG, TAG, detail) else AppLogger.w(TAG, detail)
+                            if (closing) AppLogger.d(TAG, detail) else AppLogger.w(TAG, detail)
                             if (!handshakeDone.isCompleted) {
                                 handshakeDone.completeExceptionally(
                                     IOException("Upstream connection closed before completing the TLS/ALPN handshake"),
