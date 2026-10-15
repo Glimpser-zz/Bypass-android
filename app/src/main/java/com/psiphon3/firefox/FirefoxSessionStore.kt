@@ -77,7 +77,13 @@ class FirefoxSessionStore(context: Context) {
 
     @Synchronized
     fun clear() {
-        preferences.edit().clear().apply()
+        // Expired/revoked session tokens should not erase the remembered login fields.
+        // Explicit Sign out calls clearCredentials() separately.
+        preferences.edit()
+            .remove(KEY_ACCESS)
+            .remove(KEY_REFRESH)
+            .remove(KEY_EXPIRY)
+            .apply()
     }
 
     companion object {
