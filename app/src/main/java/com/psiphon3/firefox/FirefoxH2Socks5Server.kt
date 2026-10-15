@@ -71,7 +71,7 @@ class FirefoxH2Socks5Server(
                 val reserved = input.read()
                 val atyp = input.read()
                 if (ver != 5 || reserved != 0) return
-                if (cmd != 1) { reply(output, 7); return }
+                if (cmd != 1 && cmd != 3) { reply(output, 7); return }
                 val host = when (atyp) {
                     1 -> { val b = ByteArray(4); readFully(input, b); InetAddress.getByAddress(b).hostAddress }
                     3 -> { val n = input.read(); if (n !in 1..255) return; val b = ByteArray(n); readFully(input, b); String(b, Charsets.US_ASCII) }
@@ -80,6 +80,27 @@ class FirefoxH2Socks5Server(
                 }
                 val p = ByteArray(2); readFully(input, p)
                 val targetPort = ((p[0].toInt() and 255) shl 8) or (p[1].toInt() and 255)
+                if (cmd == 3) {
+                    if (targetPort != 0 && targetPort != 53) { reply(output, 2); return }
+                    val relay = try {
+                        FirefoxSocks5UdpDnsRelay(upstream, s.inetAddress)
+                    } catch (e: Exception) {
+                        FirefoxLog.d(TAG, "UDP DNS association failed: ${e.message}")
+                        reply(output, 1)
+                        return
+                    }
+                    try {
+                        relay.start()
+                        output.write(byteArrayOf(5, 0, 0, 1, 127, 0, 0, 1,
+                            (relay.port ushr 8).toByte(), relay.port.toByte()))
+                        output.flush()
+                        val drain = ByteArray(64)
+                        while (input.read(drain) >= 0) { /* association lives until TCP control closes */ }
+                    } finally {
+                        relay.close()
+                    }
+                    return
+                }
                 if (targetPort == 0) { reply(output, 1); return }
                 s.soTimeout = 0
                 val stream = try {
