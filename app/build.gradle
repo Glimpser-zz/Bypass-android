@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 // ---------------------------------------------------------------------------
 // Generate EmbeddedValues.java from environment variables before compilation.
@@ -319,6 +320,12 @@ android {
 
     buildFeatures {
         buildConfig true
+    }
+
+    // Keep Kotlin interop bytecode aligned with this legacy Java app until the
+    // Firefox transport module is migrated and validated end-to-end.
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
 
     if (propFile.canRead()) {
