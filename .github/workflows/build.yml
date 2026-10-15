@@ -150,8 +150,7 @@ jobs:
     name: Build APK
     needs: build-aar
     runs-on: ubuntu-latest
-    container:
-      image: cimg/android:2024.01.1-ndk
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
