@@ -56,9 +56,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs in the form of "aetherlink://settings" -->
+                <!-- Accepts URIs in the form of "donkeysparty://settings" -->
                 <data
-                    android:scheme="aetherlink"
+                    android:scheme="donkeysparty"
                     android:host="settings" />
             </intent-filter>
         </activity>
@@ -67,7 +67,7 @@
             android:exported="false"
             android:targetActivity="com.psiphon3.MainActivity" />
 
-        <!-- Disguise: Default identity (AetherLink) -->
+        <!-- Disguise: Default identity (Donkeys Party) -->
         <activity-alias
             android:name=".LauncherDefault"
             android:label="@string/app_name"
@@ -160,7 +160,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Accepts URIs that begin with "psiphon://feedback” -->
                 <data
-                    android:scheme="aetherlink"
+                    android:scheme="donkeysparty"
                     android:host="feedback" />
             </intent-filter>
         </activity>
@@ -234,7 +234,7 @@
             android:name=".log.LoggingContentProvider"
             android:exported="false"
             android:process=":LoggingContentProvider"
-            android:authorities="net.glimpser.aetherlink.LoggingContentProvider" />
+            android:authorities="net.glimpser.donkeysparty.LoggingContentProvider" />
         <!-- PsiphonUpdateReceiver receives intents that trigger upgrade checking. -->
         <receiver android:name=".PsiphonUpdateReceiver"
             android:exported="false">
@@ -264,7 +264,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="net.glimpser.aetherlink.UpgradeFileProvider"
+            android:authorities="net.glimpser.donkeysparty.UpgradeFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
