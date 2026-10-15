@@ -62,6 +62,10 @@ class FirefoxServerListClient(
                             host = serverHost
                             port = serverPort
                         }
+                        // Some Remote Settings records list protocols without a CONNECT
+                        // entry. In that case, retain the record's documented host/port.
+                        if (host.isBlank()) host = serverHost
+                        if (port !in 1..65535) port = serverPort
                         if (host.isNotBlank() && port in 1..65535) {
                             candidates.add(
                                 FirefoxServerCandidate(
