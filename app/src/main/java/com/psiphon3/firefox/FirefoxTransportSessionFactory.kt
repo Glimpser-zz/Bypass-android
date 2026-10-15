@@ -10,6 +10,9 @@ import java.io.IOException
  * has completed. It is not yet attached to Bypass's packet/TUN forwarding loop.
  */
 class FirefoxTransportSessionFactory {
+    suspend fun connect(candidate: FirefoxServerCandidate, proxyPass: GuardianControlPlane.ProxyPass): UpstreamSession =
+        connect(candidate.host, candidate.port, proxyPass)
+
     suspend fun connect(host: String, port: Int, proxyPass: GuardianControlPlane.ProxyPass): UpstreamSession {
         require(host.isNotBlank()) { "Firefox upstream host is required" }
         require(port in 1..65535) { "Firefox upstream port is invalid" }
