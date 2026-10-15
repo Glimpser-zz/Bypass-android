@@ -190,7 +190,7 @@ class H2UpstreamSession(
             }
             val stranded = activeStreams.get()
             if (stranded > 0) {
-                AppLogger.w(
+                FirefoxLog.w(
                     TAG,
                     "a swapped-out upstream session has moved no data for " +
                         "${DRAIN_IDLE_TIMEOUT_MS / 1_000}s with $stranded flow(s) still open; closing it so its " +
@@ -233,7 +233,7 @@ class H2UpstreamSession(
         if (tlsProvider != null) {
             sslContextBuilder.sslContextProvider(tlsProvider)
         } else {
-            AppLogger.w(
+            FirefoxLog.w(
                 TAG,
                 "Conscrypt is unavailable; falling back to the platform TLS stack " +
                     "(protocols=${TLS_PROTOCOLS.joinToString()})",
@@ -244,7 +244,7 @@ class H2UpstreamSession(
         val sslContext: SslContext = sslContextBuilder.build()
 
         if (connectHost != upstreamHost) {
-            AppLogger.i(
+            FirefoxLog.i(
                 TAG,
                 "custom edge address in use: TCP to $connectHost:$upstreamPort, still presenting and " +
                     "verifying \"$upstreamHost\"",
@@ -269,7 +269,7 @@ class H2UpstreamSession(
                     runCatching {
                         FirefoxControlPlaneHttp.socketProtector?.invoke(ch.publicJavaChannel().socket())
                     }.onFailure {
-                        com.vauth.foxyvpn.data.AppLogger.e(TAG, "failed to protect netty socket", it)
+                        FirefoxLog.e(TAG, "failed to protect netty socket", it)
                     }
 
                     upstreamProxy?.let { proxy -> ch.pipeline().addLast(buildProxyHandler(proxy)) }
@@ -308,7 +308,7 @@ class H2UpstreamSession(
                                 is Http2GoAwayFrame -> {
                                     acceptingNewStreams = false
                                     val reason = msg.content().toString(Charsets.UTF_8).ifBlank { "<no reason given>" }
-                                    AppLogger.w(
+                                    FirefoxLog.w(
                                         TAG,
                                         "upstream sent GOAWAY: errorCode=${msg.errorCode()} lastStreamId=${msg.lastStreamId()} reason=\"$reason\"",
                                     )
@@ -322,7 +322,7 @@ class H2UpstreamSession(
                                         val limit = announced.coerceIn(1L, Int.MAX_VALUE.toLong()).toInt()
                                         if (limit != maxConcurrentStreams) {
                                             maxConcurrentStreams = limit
-                                            AppLogger.i(
+                                            FirefoxLog.i(
                                                 TAG,
                                                 "upstream allows $limit concurrent stream(s); new flows will wait " +
                                                     "for a free slot instead of being refused",
@@ -350,7 +350,7 @@ class H2UpstreamSession(
                             val detail = "upstream channel to $upstreamHost:$upstreamPort became inactive " +
                                 "(local=${ctx.channel().localAddress()})"
 
-                            if (closing) AppLogger.d(TAG, detail) else AppLogger.w(TAG, detail)
+                            if (closing) FirefoxLog.d(TAG, detail) else FirefoxLog.w(TAG, detail)
                             if (!handshakeDone.isCompleted) {
                                 handshakeDone.completeExceptionally(
                                     IOException("Upstream connection closed before completing the TLS/ALPN handshake"),
@@ -363,13 +363,13 @@ class H2UpstreamSession(
 
                             if (closing || handshakeDone.isCompleted) {
 
-                                AppLogger.w(
+                                FirefoxLog.w(
                                     TAG,
                                     "upstream connection to $upstreamHost:$upstreamPort dropped: ${cause.message} " +
                                         "(usually the network changed underneath it)",
                                 )
                             } else {
-                                AppLogger.e(
+                                FirefoxLog.e(
                                     TAG,
                                     "upstream channel error to $upstreamHost:$upstreamPort (often a TLS/ALPN handshake or, " +
                                         "if an upstream proxy is configured, a proxy CONNECT failure)",
@@ -384,7 +384,7 @@ class H2UpstreamSession(
                             if (evt is SslHandshakeCompletionEvent) {
                                 if (evt.isSuccess) {
                                     val negotiated = sslHandler.applicationProtocol()
-                                    AppLogger.i(
+                                    FirefoxLog.i(
                                         TAG,
                                         "TLS handshake to $connectHost:$upstreamPort complete, " +
                                             "verified name=$upstreamHost, negotiated ALPN protocol=$negotiated, " +
@@ -401,7 +401,7 @@ class H2UpstreamSession(
                                     }
                                 } else {
                                     val cause = evt.cause() ?: IllegalStateException("TLS handshake failed with no cause")
-                                    AppLogger.e(TAG, "TLS/ALPN handshake to $connectHost:$upstreamPort failed", cause)
+                                    FirefoxLog.e(TAG, "TLS/ALPN handshake to $connectHost:$upstreamPort failed", cause)
                                     handshakeDone.completeExceptionally(cause)
                                 }
                             }
@@ -429,7 +429,7 @@ class H2UpstreamSession(
     private fun buildProxyHandler(proxy: UpstreamProxyConfig): ProxyHandler {
         val proxyAddress = InetSocketAddress(proxy.host, proxy.port)
         val hasCredentials = !proxy.username.isNullOrBlank()
-        AppLogger.i(
+        FirefoxLog.i(
             TAG,
             "chaining upstream connection to $connectHost:$upstreamPort through ${proxy.type} proxy $proxyAddress",
         )
@@ -458,7 +458,7 @@ class H2UpstreamSession(
                 when {
 
                     awaitingPingAck && now - pingSentAt >= KEEPALIVE_PING_TIMEOUT_MS -> {
-                        AppLogger.w(
+                        FirefoxLog.w(
                             TAG,
                             "keepalive PING went unanswered for ${now - pingSentAt}ms; closing dead upstream session",
                         )
@@ -567,7 +567,7 @@ class H2UpstreamSession(
                                 is Http2ResetFrame -> {
                                     val streamId = (ctx.channel() as Http2StreamChannel).stream().id()
                                     val cause = IOException("Upstream reset stream $streamId (errorCode=${frame.errorCode()})")
-                                    AppLogger.d(TAG, "upstream reset stream $streamId: errorCode=${frame.errorCode()}")
+                                    FirefoxLog.d(TAG, "upstream reset stream $streamId: errorCode=${frame.errorCode()}")
                                     if (!responseHeaders.isCompleted) responseHeaders.completeExceptionally(cause)
                                     streamInput.offerError(cause)
                                 }
@@ -649,7 +649,7 @@ class H2UpstreamSession(
 
     private class RejectPushStreamHandler : ChannelInitializer<Http2StreamChannel>() {
         override fun initChannel(ch: Http2StreamChannel) {
-            AppLogger.w(TAG, "upstream opened an unexpected server-initiated stream ${ch.stream().id()}; closing it")
+            FirefoxLog.w(TAG, "upstream opened an unexpected server-initiated stream ${ch.stream().id()}; closing it")
             ch.close()
         }
     }
