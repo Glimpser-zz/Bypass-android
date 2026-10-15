@@ -326,6 +326,12 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         }
 
         if (intent != null && INTENT_ACTION_START_FIREFOX_TUNNEL.equals(intent.getAction())) {
+            if (!m_firstStart && !m_firefoxModeRequested) {
+                // Never mutate the selected mode of a live Psiphon tunnel. Android VPN
+                // services are exclusive; the old tunnel must stop before another mode starts.
+                MyLog.w("Ignoring Firefox start request because the Psiphon tunnel is already running.");
+                return Service.START_REDELIVER_INTENT;
+            }
             m_firefoxModeRequested = true;
         }
 
@@ -1233,6 +1239,10 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
                 m_firefoxRuntime = null;
             }
             m_vpnManager.vpnTeardown();
+            // Clear the persistent flag on normal stop AND on startup/connection failure,
+            // otherwise the Firefox screen can incorrectly believe a dead service is running.
+            new AppPreferences(getContext()).put(
+                    getContext().getString(R.string.serviceRunningPreference), false);
             if (!m_firefoxModeRequested) {
                 m_tunnel.stop();
             }
@@ -1250,8 +1260,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
     private void runFirefoxTunnel() throws Exception {
         m_vpnManager.setShareProxyOnNetwork(false);
-        m_vpnManager.vpnEstablish();
-        MyLog.i("Starting Firefox HTTP/2 transport");
+        MyLog.i("Starting Firefox HTTP/2 transport before establishing the TUN interface");
 
         m_firefoxRuntime = new FirefoxTunnelRuntime(getContext());
         FirefoxConnectionCoordinator.Result result = m_firefoxRuntime.connectBlocking();
@@ -1271,6 +1280,11 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
 
         FirefoxConnectionCoordinator.Result.SocksReady ready =
                 (FirefoxConnectionCoordinator.Result.SocksReady) result;
+
+        // Bootstrap the protected control-plane and HTTP/2 socket on the underlying network
+        // before installing a default route into TUN. Doing this in the opposite order can
+        // deadlock hostname resolution because tun2socks is not running until upstream is ready.
+        m_vpnManager.vpnEstablish();
         m_firefoxDnsUdpGateway = new FirefoxDnsUdpGateway(ready.getSession());
         m_firefoxDnsUdpGateway.start();
         m_vpnManager.routeThroughTunnel(ready.getSocksPort());

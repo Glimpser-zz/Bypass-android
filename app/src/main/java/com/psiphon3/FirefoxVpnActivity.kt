@@ -74,13 +74,16 @@ class FirefoxVpnActivity : AppCompatActivity() {
         val saveEdgeButton = Button(this).apply { text = "Save edge address" }
         content.addView(saveEdgeButton, matchWidth())
 
+        val savedCredentials = runCatching { authCredentialsStore().loadCredentials() }.getOrNull()
         email = EditText(this).apply {
             hint = "Firefox Account email"
+            setText(savedCredentials?.first.orEmpty())
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
             setSingleLine(true)
         }
         password = EditText(this).apply {
             hint = "Firefox Account password"
+            setText(savedCredentials?.second.orEmpty())
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             setSingleLine(true)
         }
@@ -130,6 +133,8 @@ class FirefoxVpnActivity : AppCompatActivity() {
         connectButton.setOnClickListener { requestVpnPermission() }
         signOutButton.setOnClickListener {
             auth.signOut()
+            authCredentialsStore().clearCredentials()
+            email.text?.clear()
             password.text?.clear()
             code.text?.clear()
             code.visibility = View.GONE
@@ -150,6 +155,8 @@ class FirefoxVpnActivity : AppCompatActivity() {
     private fun beginSignIn() {
         val emailValue = email.text?.toString().orEmpty()
         val passwordValue = password.text?.toString().orEmpty()
+        // EncryptedSharedPreferences is used by FirefoxSessionStore for credentials.
+        runCatching { authCredentialsStore().saveCredentials(emailValue, passwordValue) }
         signInButton.isEnabled = false
         status.text = "Signing in…"
         uiScope.launch {
@@ -159,7 +166,7 @@ class FirefoxVpnActivity : AppCompatActivity() {
                         code.visibility = View.GONE
                         verifyButton.visibility = View.GONE
                         connectButton.isEnabled = true
-                        status.text = "Signed in. The password was not saved."
+                        status.text = "Signed in. Credentials are saved encrypted on this device."
                     }
                     FirefoxAuthRepository.LoginResult.NeedsEmailCode -> {
                         code.visibility = View.VISIBLE
@@ -185,7 +192,7 @@ class FirefoxVpnActivity : AppCompatActivity() {
                 code.visibility = View.GONE
                 verifyButton.visibility = View.GONE
                 connectButton.isEnabled = true
-                status.text = "Signed in. The password was not saved."
+                status.text = "Signed in. Credentials are saved encrypted on this device."
             } catch (e: Exception) {
                 status.text = e.message ?: "Verification failed."
             } finally {
@@ -235,6 +242,8 @@ class FirefoxVpnActivity : AppCompatActivity() {
         }
         status.text = "Starting Firefox transport…"
     }
+
+    private fun authCredentialsStore(): FirefoxSessionStore = FirefoxSessionStore(applicationContext)
 
     private fun matchWidth(): LinearLayout.LayoutParams =
         LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
