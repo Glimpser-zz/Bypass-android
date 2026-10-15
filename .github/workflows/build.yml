@@ -172,7 +172,7 @@ jobs:
       - name: Select build mode
         id: buildmode
         run: |
-          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ] && [ -n "$FETCH_SCRIPT" ] && [ -n "$CHANNEL_ID" ] && [ -n "$SPONSOR_ID" ]; then
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ] && [ -n "$FETCH_SCRIPT" ] && [ -n "$CHANNEL_ID" ] && [ -n "$SPONSOR_ID" ] && [ -n "$MAXMIND_KEY" ]; then
             echo "release_enabled=true" >> "$GITHUB_OUTPUT"
             echo "Release secrets found; building signed release APK."
           else
@@ -187,9 +187,10 @@ jobs:
           FETCH_SCRIPT: ${{ secrets.FETCH_SERVER_LIST_SCRIPT }}
           CHANNEL_ID: ${{ secrets.PSIPHON_PROPAGATION_CHANNEL_ID }}
           SPONSOR_ID: ${{ secrets.PSIPHON_SPONSOR_ID }}
+          MAXMIND_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
 
       - name: Download GeoLite2 database
-        if: ${{ secrets.MAXMIND_LICENSE_KEY != '' && steps.buildmode.outputs.release_enabled == 'true' }}
+        if: ${{ steps.buildmode.outputs.release_enabled == 'true' }}
         run: |
           curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}&suffix=tar.gz" \
             | tar xz --strip-components=1 --wildcards '*/GeoLite2-Country.mmdb'
