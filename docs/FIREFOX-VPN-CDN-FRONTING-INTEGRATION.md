@@ -45,5 +45,6 @@ The integration branch now has these preparatory code changes:
 - Minimum Android version raised to API 26 (Android 8.0), as agreed for the planned transport dependencies.
 - OkHttp, coroutines, Netty HTTP/2, Netty proxy handlers, and Conscrypt dependencies added.
 - A new `com.psiphon3.firefox.GuardianControlPlane` client can request Guardian account status and a proxy pass when the caller supplies a valid Firefox access token. HTTP 406 challenge requirements are surfaced explicitly; this client does not bypass or fake the challenge.
+- Added `FirefoxControlPlaneHttp`, a shared OkHttp client with cookie persistence and a socket-protection hook. The hook must still be wired to Bypass's active `VpnService` before this client is used while the VPN is running; until then, control-plane routing is not integrated.
 
 The feature is still **not end-to-end implemented**. Firefox Account sign-in/token refresh, challenge solving, server/edge selection, the HTTP/2 data plane, integration with Bypass's existing VPN lifecycle, and the mode selector remain outstanding. No successful build or real-network test has been claimed.
