@@ -67,3 +67,10 @@ The feature is still **not end-to-end implemented**. Firefox Account sign-in/tok
 - Added `FirefoxConnectionCoordinator` to run Guardian preflight, fetch Mozilla server candidates, optionally filter by country code, and attempt HTTP/2 connections until one succeeds.
 - The coordinator returns the chosen endpoint and live upstream session, or a typed sign-in/challenge/failure result. It deliberately does not claim the device VPN is connected.
 - The returned HTTP/2 session still needs to be integrated with the app's TUN packet forwarding and per-flow TCP handling. No user traffic is routed through it yet.
+
+
+## Endpoint selection hardening
+
+- Server discovery now falls back to a server record's hostname and port when no usable CONNECT endpoint is present in its protocol list.
+- The coordinator tries at most four randomized candidates per attempt, rather than potentially serially waiting on every server in a country. A caller may retry after a failure.
+- These changes improve bounded failure behavior; they do not replace an Android TUN-to-stream data plane or substitute for build and device testing.
