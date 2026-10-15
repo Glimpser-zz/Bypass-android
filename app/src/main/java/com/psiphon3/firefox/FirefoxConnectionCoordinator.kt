@@ -59,7 +59,7 @@ class FirefoxConnectionCoordinator(
         var lastFailure: Exception? = null
         for (candidate in candidates.shuffled()) {
             try {
-                val session = factory.connect(candidate.host, candidate.port, ready.proxyPass)
+                val session = factory.connect(candidate, ready.proxyPass)
                 return@withContext Result.Connected(candidate, session)
             } catch (cancellation: CancellationException) {
                 throw cancellation
