@@ -274,6 +274,15 @@ android {
                 }
             }
 
+    packaging {
+        resources {
+            excludes += [
+                'META-INF/INDEX.LIST',
+                'META-INF/io.netty.versions.properties'
+            ]
+        }
+    }
+
     signingConfigs {
         release
     }
@@ -345,8 +354,7 @@ android {
         throw new GradleException('signing.properties is required for release builds; debug builds can use Android debug signing.')
     }
 
-    // r17c upstream (API 14); r23 on Apple Silicon, which has no r17 host
-    // toolchain and needs GNUMAKE=/usr/bin/make.
+    // Use the same NDK version installed by CI for reproducible native builds.
     ndkVersion('23.1.7779620')
     externalNativeBuild {
         ndkBuild {

@@ -5,9 +5,9 @@ import java.io.IOException
 /**
  * Creates a real HTTP/2 upstream session from a Guardian proxy pass.
  *
- * Callers must obtain host/port from Mozilla's current VPN server list. This class
- * intentionally does not guess endpoints or report a VPN as connected until connect()
- * has completed. It is not yet attached to Bypass's packet/TUN forwarding loop.
+ * Callers obtain host/port from Mozilla's current VPN server list. An optional edge
+ * address overrides the TCP destination while TLS SNI remains the Mozilla hostname.
+ * The experimental TUN integration currently supports TCP plus DNS-over-TCP only.
  */
 class FirefoxTransportSessionFactory(
     private val edgeAddress: String? = null,
