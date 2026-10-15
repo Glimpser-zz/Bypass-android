@@ -1,0 +1,32 @@
+package com.psiphon3.firefox
+
+import java.io.Closeable
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+
+internal interface UpstreamSession : Closeable {
+    suspend fun connect()
+    suspend fun openStream(targetHost: String, targetPort: Int): TunneledStream
+    fun disableNewStreamsAndCloseWhenIdle()
+    fun updateBearerToken(token: String)
+    val isConnected: Boolean
+}
+
+internal data class TunneledStream(
+    val input: InputStream,
+    val output: OutputStream,
+    val close: () -> Unit,
+)
+
+internal class UpstreamConnectRejectedException(
+    val statusCode: Int?,
+    val authority: String,
+    message: String,
+) : IOException(message)
+
+internal class UpstreamConnectTimeoutException(
+    val authority: String,
+    message: String,
+    cause: Throwable? = null,
+) : IOException(message, cause)
