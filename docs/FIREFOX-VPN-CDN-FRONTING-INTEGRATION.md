@@ -40,4 +40,10 @@ G-FoxyVPN's HTTP/2 upstream is also not a generic CDN-fronting socket: its edge 
 
 ## Current status
 
-This document records the initial architecture review. The feature is **not implemented yet**. No runtime behavior has been changed by this document, and a successful build or real-network test has not been claimed. The next code change should be the transport adapter plus the minimal reusable Firefox components, followed by the UI and manifest changes.
+The integration branch now has these preparatory code changes:
+- Kotlin Gradle plugin enabled for the app module.
+- Minimum Android version raised to API 26 (Android 8.0), as agreed for the planned transport dependencies.
+- OkHttp, coroutines, Netty HTTP/2, Netty proxy handlers, and Conscrypt dependencies added.
+- A new `com.psiphon3.firefox.GuardianControlPlane` client can request Guardian account status and a proxy pass when the caller supplies a valid Firefox access token. HTTP 406 challenge requirements are surfaced explicitly; this client does not bypass or fake the challenge.
+
+The feature is still **not end-to-end implemented**. Firefox Account sign-in/token refresh, challenge solving, server/edge selection, the HTTP/2 data plane, integration with Bypass's existing VPN lifecycle, and the mode selector remain outstanding. No successful build or real-network test has been claimed.
