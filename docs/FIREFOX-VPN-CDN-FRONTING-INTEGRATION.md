@@ -107,8 +107,11 @@ hostname. When supplied, TCP connects to that address while TLS SNI remains the 
 the selected Mozilla server record; this is not a guarantee that a third-party CDN will proxy
 the endpoint successfully.
 
-The current data plane is limited to TCP CONNECT plus DNS-over-TCP forwarded through the
-HTTP/2 upstream. General UDP traffic is not supported. Account security challenges are shown
-to the user and are not automatically bypassed. A successful APK build does not establish
-that the remote account flow, server policy, edge routing, or on-device data path works; those
-still require live-device testing.
+The loopback SOCKS5 adapter now implements UDP ASSOCIATE for DNS queries on port 53 by
+converting each datagram to DNS-over-TCP through the HTTP/2 upstream. This is DNS-only UDP
+compatibility, not arbitrary UDP transport: QUIC, voice/video UDP, games, and other UDP protocols
+are not carried. The listener and upstream still need end-to-end device testing and verification
+that Bypass's active TUN/tun2socks path actually uses this listener in Firefox mode. Account
+security challenges are shown to the user and are not automatically bypassed. A successful APK
+build does not establish that the remote account flow, server policy, edge routing, or on-device
+data path works; those still require live-device testing.
