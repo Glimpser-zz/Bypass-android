@@ -19,6 +19,8 @@
 
 package com.psiphon3.psiphonlibrary;
 
+import com.psiphon3.firefox.FirefoxControlPlaneHttp;
+
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -66,15 +68,19 @@ public class TunnelVpnService extends VpnService {
     @Override
     public void onCreate() {
         m_Manager.onCreate();
+        // Ensure future Firefox control-plane sockets bypass this VPN's own TUN route.
+        FirefoxControlPlaneHttp.INSTANCE.attachVpnService(this);
     }
 
     @Override
     public void onDestroy() {
+        FirefoxControlPlaneHttp.INSTANCE.detachVpnService();
         m_Manager.onDestroy();
     }
 
     @Override
     public void onRevoke() {
+        FirefoxControlPlaneHttp.INSTANCE.detachVpnService();
         m_Manager.onRevoke();
     }
 }
