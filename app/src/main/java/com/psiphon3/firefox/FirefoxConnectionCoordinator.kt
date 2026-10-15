@@ -21,6 +21,13 @@ class FirefoxConnectionCoordinator(
             val session: UpstreamSession,
         ) : Result()
 
+        data class SocksReady(
+            val candidate: FirefoxServerCandidate,
+            val session: UpstreamSession,
+            val socksServer: FirefoxH2Socks5Server,
+            val socksPort: Int,
+        ) : Result()
+
         data object SignInRequired : Result()
         data class ChallengeRequired(val message: String) : Result()
         data class Failed(val message: String, val retryable: Boolean) : Result()
@@ -76,6 +83,29 @@ class FirefoxConnectionCoordinator(
                 (lastFailure?.message?.let { ": $it" } ?: ""),
             true,
         )
+    }
+
+
+    /**
+     * Opens the upstream and starts its loopback SOCKS5 adapter.
+     * The caller owns SocksReady.socksServer and must close it on every stop/revoke path.
+     * This method does not establish the Android VPN interface or route TUN traffic.
+     */
+    suspend fun connectWithSocks5(countryCode: String? = null): Result {
+        return when (val result = connect(countryCode)) {
+            is Result.Connected -> {
+                val socks = FirefoxH2Socks5Server(result.session)
+                try {
+                    val port = socks.start()
+                    Result.SocksReady(result.candidate, result.session, socks, port)
+                } catch (e: Exception) {
+                    socks.close()
+                    result.session.close()
+                    Result.Failed("Upstream connected but local SOCKS5 listener could not start: ${e.message}", true)
+                }
+            }
+            else -> result
+        }
     }
 
     private companion object {
