@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * DNS is carried as DNS-over-TCP through the HTTP/2 upstream. Other UDP protocols
  * are deliberately not forwarded: this experimental transport is TCP + DNS only.
  */
-class FirefoxDnsUdpGateway(
+class FirefoxDnsUdpGateway @JvmOverloads constructor(
     private val upstream: UpstreamSession,
     private val listenPort: Int = DEFAULT_PORT,
 ) : Closeable {
