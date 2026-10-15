@@ -60,6 +60,9 @@ import com.psiphon3.R;
 import com.psiphon3.TunnelState;
 import com.psiphon3.VpnManager;
 import com.psiphon3.VpnRulesHelper;
+import com.psiphon3.firefox.FirefoxConnectionCoordinator;
+import com.psiphon3.firefox.FirefoxDnsUdpGateway;
+import com.psiphon3.firefox.FirefoxTunnelRuntime;
 import com.psiphon3.log.MyLog;
 
 import net.grandcentrix.tray.AppPreferences;
@@ -119,6 +122,7 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     public static final String INTENT_ACTION_SELECTED_REGION_NOT_AVAILABLE = "com.psiphon3.psiphonlibrary.TunnelManager.SELECTED_REGION_NOT_AVAILABLE";
     public static final String INTENT_ACTION_VPN_REVOKED = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_VPN_REVOKED";
     public static final String INTENT_ACTION_STOP_TUNNEL = "com.psiphon3.psiphonlibrary.TunnelManager.ACTION_STOP_TUNNEL";
+    public static final String INTENT_ACTION_START_FIREFOX_TUNNEL = "com.psiphon3.psiphonlibrary.TunnelManager.START_FIREFOX_TUNNEL";
     public static final String IS_CLIENT_AN_ACTIVITY = "com.psiphon3.psiphonlibrary.TunnelManager.IS_CLIENT_AN_ACTIVITY";
     public static final String INTENT_ACTION_UNSAFE_TRAFFIC = "com.psiphon3.psiphonlibrary.TunnelManager.INTENT_ACTION_UNSAFE_TRAFFIC";
     public static final String INTENT_ACTION_UPSTREAM_PROXY_ERROR = "com.psiphon3.psiphonlibrary.TunnelManager.UPSTREAM_PROXY_ERROR";
@@ -216,6 +220,9 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
     private Thread m_tunnelThread;
     private final AtomicBoolean m_isStopping;
     private PsiphonTunnel m_tunnel;
+    private volatile boolean m_firefoxModeRequested = false;
+    private FirefoxTunnelRuntime m_firefoxRuntime;
+    private FirefoxDnsUdpGateway m_firefoxDnsUdpGateway;
     private VpnManager m_vpnManager = VpnManager.getInstance();
     private String m_lastUpstreamProxyErrorMessage;
     private volatile String m_lastInproxyDiagMsg = "";
@@ -318,22 +325,33 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             return Service.START_NOT_STICKY;
         }
 
+        if (intent != null && INTENT_ACTION_START_FIREFOX_TUNNEL.equals(intent.getAction())) {
+            m_firefoxModeRequested = true;
+        }
+
         if (m_firstStart) {
             MyLog.i(R.string.client_version, MyLog.Sensitivity.NOT_SENSITIVE, EmbeddedValues.CLIENT_VERSION);
             m_firstStart = false;
             m_tunnelThreadStopSignal = new CountDownLatch(1);
-            m_compositeDisposable.add(
-                    getTunnelConfigSingle()
-                            .doOnSuccess(config -> {
-                                setTunnelConfig(config);
-                                if (config.shareProxyOnNetwork) {
-                                    MyLog.i(R.string.log_lan_sharing_enabled,
-                                            MyLog.Sensitivity.NOT_SENSITIVE);
-                                }
-                                m_tunnelThread = new Thread(this::runTunnel);
-                                m_tunnelThread.start();
-                            })
-                            .subscribe());
+            if (m_firefoxModeRequested) {
+                // Firefox transport is mutually exclusive with the Psiphon core tunnel.
+                setTunnelConfig(new Config());
+                m_tunnelThread = new Thread(this::runTunnel);
+                m_tunnelThread.start();
+            } else {
+                m_compositeDisposable.add(
+                        getTunnelConfigSingle()
+                                .doOnSuccess(config -> {
+                                    setTunnelConfig(config);
+                                    if (config.shareProxyOnNetwork) {
+                                        MyLog.i(R.string.log_lan_sharing_enabled,
+                                                MyLog.Sensitivity.NOT_SENSITIVE);
+                                    }
+                                    m_tunnelThread = new Thread(this::runTunnel);
+                                    m_tunnelThread.start();
+                                })
+                                .subscribe());
+            }
 
             // Set the persistent service running flag to true.
             // This flag is used to determine whether the service should be automatically restarted
@@ -1165,34 +1183,35 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
         sendDataTransferStatsHandler.postDelayed(sendDataTransferStats, sendDataTransferStatsIntervalMs);
 
         try {
-            m_vpnManager.setShareProxyOnNetwork(m_tunnelConfig.shareProxyOnNetwork);
-            m_vpnManager.vpnEstablish();
-            MyLog.i(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
+            if (m_firefoxModeRequested) {
+                runFirefoxTunnel();
+            } else {
+                m_vpnManager.setShareProxyOnNetwork(m_tunnelConfig.shareProxyOnNetwork);
+                m_vpnManager.vpnEstablish();
+                MyLog.i(R.string.vpn_service_running, MyLog.Sensitivity.NOT_SENSITIVE);
 
-            m_tunnel.setVpnMode(true);
-            m_tunnel.startTunneling(getServerEntries(m_parentService));
+                m_tunnel.setVpnMode(true);
+                m_tunnel.startTunneling(getServerEntries(m_parentService));
 
-            // Start conduit fallback timer immediately after tunneling begins.
-            // We can't wait for onConnecting() because tunnel-core may never emit
-            // a connecting notice when using INPROXY protocols with a personal
-            // compartment ID that has no matching proxies.
-            m_Handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    startConduitFallbackTimerIfNeeded();
+                // Start conduit fallback timer immediately after tunneling begins.
+                // We can't wait for onConnecting() because tunnel-core may never emit
+                // a connecting notice when using INPROXY protocols with a personal
+                // compartment ID that has no matching proxies.
+                m_Handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        startConduitFallbackTimerIfNeeded();
+                    }
+                });
+
+                try {
+                    m_tunnelThreadStopSignal.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            });
-
-            try {
-                m_tunnelThreadStopSignal.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
-        } catch (IllegalStateException |
-                 IllegalArgumentException |
-                 SecurityException |
-                 PsiphonTunnel.Exception e) {
-            String errorMessage = e.getMessage();
+        } catch (Exception e) {
+            String errorMessage = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
             MyLog.e(R.string.start_tunnel_failed, MyLog.Sensitivity.NOT_SENSITIVE, errorMessage);
             if ((errorMessage.startsWith("get package uid:") || errorMessage.startsWith("getPackageUid:"))
                     && errorMessage.endsWith("android.permission.INTERACT_ACROSS_USERS.")) {
@@ -1205,8 +1224,18 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             cancelConduitFallbackTimer();
             m_networkConnectionStatePublishRelay.accept(TunnelState.ConnectionData.NetworkConnectionState.CONNECTING);
             m_isRoutingThroughTunnelPublishRelay.accept(false);
+            if (m_firefoxDnsUdpGateway != null) {
+                try { m_firefoxDnsUdpGateway.close(); } catch (Exception ignored) { }
+                m_firefoxDnsUdpGateway = null;
+            }
+            if (m_firefoxRuntime != null) {
+                try { m_firefoxRuntime.close(); } catch (Exception ignored) { }
+                m_firefoxRuntime = null;
+            }
             m_vpnManager.vpnTeardown();
-            m_tunnel.stop();
+            if (!m_firefoxModeRequested) {
+                m_tunnel.stop();
+            }
 
             sendDataTransferStatsHandler.removeCallbacks(sendDataTransferStats);
             DataTransferStats.getDataTransferStatsForService().stop();
@@ -1216,6 +1245,47 @@ public class TunnelManager implements PsiphonTunnel.HostService, VpnManager.VpnS
             // Stop service
             m_parentService.stopForeground(true);
             m_parentService.stopSelf();
+        }
+    }
+
+    private void runFirefoxTunnel() throws Exception {
+        m_vpnManager.setShareProxyOnNetwork(false);
+        m_vpnManager.vpnEstablish();
+        MyLog.i("Starting Firefox HTTP/2 transport");
+
+        m_firefoxRuntime = new FirefoxTunnelRuntime(getContext());
+        FirefoxConnectionCoordinator.Result result = m_firefoxRuntime.connectBlocking();
+        if (!(result instanceof FirefoxConnectionCoordinator.Result.SocksReady)) {
+            String message;
+            if (result instanceof FirefoxConnectionCoordinator.Result.SignInRequired) {
+                message = "Sign in to a subscribed Firefox Account before connecting";
+            } else if (result instanceof FirefoxConnectionCoordinator.Result.ChallengeRequired) {
+                message = ((FirefoxConnectionCoordinator.Result.ChallengeRequired) result).getMessage();
+            } else if (result instanceof FirefoxConnectionCoordinator.Result.Failed) {
+                message = ((FirefoxConnectionCoordinator.Result.Failed) result).getMessage();
+            } else {
+                message = "Firefox HTTP/2 transport did not become ready";
+            }
+            throw new IllegalStateException(message);
+        }
+
+        FirefoxConnectionCoordinator.Result.SocksReady ready =
+                (FirefoxConnectionCoordinator.Result.SocksReady) result;
+        m_firefoxDnsUdpGateway = new FirefoxDnsUdpGateway(ready.getSession());
+        m_firefoxDnsUdpGateway.start();
+        m_vpnManager.routeThroughTunnel(ready.getSocksPort());
+
+        m_tunnelState.listeningLocalSocksProxyPort = ready.getSocksPort();
+        m_tunnelState.clientRegion = ready.getCandidate().getCountryCode();
+        m_isRoutingThroughTunnelPublishRelay.accept(Boolean.TRUE);
+        m_networkConnectionStatePublishRelay.accept(
+                TunnelState.ConnectionData.NetworkConnectionState.CONNECTED);
+        MyLog.i("Firefox HTTP/2 transport connected; TCP and DNS-over-TCP are routed");
+
+        try {
+            m_tunnelThreadStopSignal.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

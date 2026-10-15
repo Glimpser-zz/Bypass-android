@@ -69,6 +69,17 @@ public class OptionsTabFragment extends PsiphonPreferenceFragmentCompat {
             }
         });
 
+        Preference firefoxVpnPreference = findPreference("firefoxVpnPreferenceKey");
+        if (firefoxVpnPreference != null) {
+            firefoxVpnPreference.setOnPreferenceClickListener(__ -> {
+                final FragmentActivity activity = getActivity();
+                if (activity != null && !activity.isFinishing()) {
+                    activity.startActivity(new Intent(activity, FirefoxVpnActivity.class));
+                }
+                return true;
+            });
+        }
+
         Preference feedbackPreference = findPreference(getContext().getString(R.string.feedbackPreferenceKey));
         feedbackPreference.setIntent(new Intent(getActivity(), FeedbackActivity.class));
 

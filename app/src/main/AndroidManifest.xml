@@ -142,6 +142,11 @@
             </intent-filter>
         </activity-alias>
         <activity
+            android:name=".FirefoxVpnActivity"
+            android:label="Firefox VPN (experimental)"
+            android:parentActivityName=".MainActivity"
+            android:exported="false" />
+        <activity
             android:name=".FeedbackActivity"
             android:parentActivityName=".MainActivity"
             android:exported="true"
