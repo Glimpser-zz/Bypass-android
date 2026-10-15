@@ -255,7 +255,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "net.glimpser.aetherlink"
+        applicationId "net.glimpser.donkeysparty"
         resValue "string", "tray__authority", "${applicationId}.tray"
         minSdkVersion 26
         compileSdk 35
