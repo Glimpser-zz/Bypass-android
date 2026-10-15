@@ -255,7 +255,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.shirokhorshid.vpn"
+        applicationId "net.glimpser.aetherlink"
         resValue "string", "tray__authority", "${applicationId}.tray"
         minSdkVersion 26
         compileSdk 35
@@ -290,7 +290,7 @@ android {
     // Configure output APK file name
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
-            def fileName = "ShirOKhorshid-${variant.buildType.name}.apk"
+            def fileName = "AetherLink-${variant.buildType.name}.apk"
             output.outputFileName = fileName
         }
     }
