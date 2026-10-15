@@ -265,10 +265,16 @@ class FirefoxH2UpstreamSession(
             .option(ChannelOption.WRITE_BUFFER_WATER_MARK, PARENT_WRITE_WATER_MARK)
             .handler(object : ChannelInitializer<FoxyNioSocketChannel>() {
                 override fun initChannel(ch: FoxyNioSocketChannel) {
-                    runCatching {
-                        FirefoxControlPlaneHttp.socketProtector?.invoke(ch.publicJavaChannel().socket())
-                    }.onFailure {
-                        FirefoxLog.e(TAG, "failed to protect netty socket", it)
+                    val socketProtector = FirefoxControlPlaneHttp.socketProtector
+                    if (socketProtector != null) {
+                        val protected = runCatching {
+                            socketProtector.invoke(ch.publicJavaChannel().socket())
+                        }.getOrDefault(false)
+                        if (!protected) {
+                            FirefoxLog.e(TAG, "VPN service could not protect the Firefox upstream socket")
+                            ch.close()
+                            throw IllegalStateException("Could not protect Firefox upstream socket")
+                        }
                     }
 
                     upstreamProxy?.let { proxy -> ch.pipeline().addLast(buildProxyHandler(proxy)) }

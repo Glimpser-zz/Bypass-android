@@ -90,7 +90,7 @@ class FirefoxDnsUdpGateway(
             val reply = ByteArray(PACKETPROTO_HEADER + replyPayloadLength)
             reply[0] = (replyPayloadLength and 0xff).toByte()
             reply[1] = ((replyPayloadLength ushr 8) and 0xff).toByte()
-            reply[2] = if (isIpv6) FLAG_IPV6.toByte() else 0
+            reply[2] = if (isIpv6) FLAG_IPV6.toByte() else 0.toByte()
             reply[3] = (connectionId and 0xff).toByte()
             reply[4] = ((connectionId ushr 8) and 0xff).toByte()
             // Preserve the original remote address so tun2socks matches the pending flow.

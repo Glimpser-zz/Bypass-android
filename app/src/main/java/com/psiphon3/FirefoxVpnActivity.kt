@@ -187,7 +187,7 @@ class FirefoxVpnActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("Android framework callback")
+    @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_VPN_PERMISSION) {
