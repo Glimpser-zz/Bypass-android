@@ -23,6 +23,12 @@ From Bypass-android:
 - `com.psiphon3.VpnManager`, the Psiphon tunnel service/interactor and existing upstream-proxy settings are the integration points to inspect.
 - `app/build.gradle` currently applies only the Android application plugin; it does not enable Kotlin. G-FoxyVPN requires Kotlin, coroutines, OkHttp, Netty, Conscrypt, and related dependencies.
 
+## Additional finding from the code inspection
+
+Bypass's `TunnelManager.buildTunnelCoreConfig()` supports Psiphon's `UpstreamProxyUrl` option. That option configures a proxy *for Psiphon's own server connections*; it does not replace Psiphon's transport with the Firefox VPN protocol. Pointing it at a local Firefox-backed proxy would therefore layer Psiphon over Firefox rather than make Bypass use Firefox as its selected VPN transport. It is not a valid substitute for the requested mode.
+
+G-FoxyVPN's HTTP/2 upstream is also not a generic CDN-fronting socket: its edge resolution, TLS identity, HTTP/2 CONNECT headers, proxy-pass token and challenge flow must remain consistent. A transport adapter must be integrated with the existing traffic-routing implementation, or the existing TUN-to-SOCKS path must be deliberately replaced for Firefox mode. The current codebase does not expose a one-line switch that safely accomplishes this.
+
 ## Required implementation sequence
 
 1. Add Kotlin support and isolate the minimum reusable Firefox control-plane/upstream code in a package that can coexist with the existing Java app.
@@ -30,7 +36,7 @@ From Bypass-android:
 3. Define how CDN fronting changes the HTTP/2 connection's edge address, TLS SNI, certificate verification, HTTP/2 authority, and request headers. These values must be based on the existing Bypass implementation and supported by the selected edge; simply changing a hostname is not sufficient.
 4. Add a UI choice between the current Psiphon transport and Firefox VPN transport, with existing mode remaining the default.
 5. Add tests for authentication/token expiry, edge selection, TLS/HTTP/2 handshake, reconnects, and traffic routing.
-6. Build and test on-device before calling the feature complete.
+6. Build and test on-device before calling the feature complete. In particular, verify the Firefox mode routes device traffic directly through its own TUN/SOCKS-to-HTTP/2 path and does not accidentally start Psiphon in front of it.
 
 ## Current status
 
