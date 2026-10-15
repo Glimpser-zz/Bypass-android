@@ -347,9 +347,7 @@ android {
 
     // r17c upstream (API 14); r23 on Apple Silicon, which has no r17 host
     // toolchain and needs GNUMAKE=/usr/bin/make.
-    def appleSilicon = System.getProperty('os.name').toLowerCase().contains('mac') &&
-            System.getProperty('os.arch') == 'aarch64'
-    ndkVersion(appleSilicon ? '23.1.7779620' : '17.2.4988734')
+    ndkVersion('23.1.7779620')
     externalNativeBuild {
         ndkBuild {
             // Path to the tun2socks NDK build script
