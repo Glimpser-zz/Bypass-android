@@ -37,7 +37,7 @@ class FirefoxTokenRefresher(
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url("https://oauth.accounts.firefox.com/v1/token")
+            .url("https://api.accounts.firefox.com/v1/oauth/token")
             .header("User-Agent", "MozillaVPN/2.35.0 (sys:linux; iap:true)")
             .header("Accept", "application/json")
             .post(body)
