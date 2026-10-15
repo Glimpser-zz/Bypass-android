@@ -34,35 +34,35 @@ object NettyLoggingBridge {
         override fun isWarnEnabled() = true
         override fun isErrorEnabled() = true
 
-        override fun trace(msg: String) = FirefoxLog.d(shortTag, redactSecrets(msg))
-        override fun trace(format: String, arg: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, arg)))
-        override fun trace(format: String, argA: Any?, argB: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB)))
-        override fun trace(format: String, vararg arguments: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments)))
-        override fun trace(msg: String, t: Throwable?) = FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t)))
+        override fun trace(msg: String) { FirefoxLog.d(shortTag, redactSecrets(msg)) }
+        override fun trace(format: String, arg: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, arg))) }
+        override fun trace(format: String, argA: Any?, argB: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB))) }
+        override fun trace(format: String, vararg arguments: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments))) }
+        override fun trace(msg: String, t: Throwable?) { FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t))) }
 
-        override fun debug(msg: String) = FirefoxLog.d(shortTag, redactSecrets(msg))
-        override fun debug(format: String, arg: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, arg)))
-        override fun debug(format: String, argA: Any?, argB: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB)))
-        override fun debug(format: String, vararg arguments: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments)))
-        override fun debug(msg: String, t: Throwable?) = FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t)))
+        override fun debug(msg: String) { FirefoxLog.d(shortTag, redactSecrets(msg)) }
+        override fun debug(format: String, arg: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, arg))) }
+        override fun debug(format: String, argA: Any?, argB: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB))) }
+        override fun debug(format: String, vararg arguments: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments))) }
+        override fun debug(msg: String, t: Throwable?) { FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t))) }
 
-        override fun info(msg: String) = FirefoxLog.d(shortTag, redactSecrets(msg))
-        override fun info(format: String, arg: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, arg)))
-        override fun info(format: String, argA: Any?, argB: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB)))
-        override fun info(format: String, vararg arguments: Any?) = FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments)))
-        override fun info(msg: String, t: Throwable?) = FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t)))
+        override fun info(msg: String) { FirefoxLog.d(shortTag, redactSecrets(msg)) }
+        override fun info(format: String, arg: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, arg))) }
+        override fun info(format: String, argA: Any?, argB: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, argA, argB))) }
+        override fun info(format: String, vararg arguments: Any?) { FirefoxLog.d(shortTag, redactSecrets(format(format, *arguments))) }
+        override fun info(msg: String, t: Throwable?) { FirefoxLog.d(shortTag, redactSecrets(withCause(msg, t))) }
 
-        override fun warn(msg: String) = FirefoxLog.w(shortTag, redactSecrets(msg))
-        override fun warn(format: String, arg: Any?) = FirefoxLog.w(shortTag, redactSecrets(format(format, arg)))
-        override fun warn(format: String, argA: Any?, argB: Any?) = FirefoxLog.w(shortTag, redactSecrets(format(format, argA, argB)))
-        override fun warn(format: String, vararg arguments: Any?) = FirefoxLog.w(shortTag, redactSecrets(format(format, *arguments)))
-        override fun warn(msg: String, t: Throwable?) = FirefoxLog.w(shortTag, redactSecrets(msg), t)
+        override fun warn(msg: String) { FirefoxLog.w(shortTag, redactSecrets(msg)) }
+        override fun warn(format: String, arg: Any?) { FirefoxLog.w(shortTag, redactSecrets(format(format, arg))) }
+        override fun warn(format: String, argA: Any?, argB: Any?) { FirefoxLog.w(shortTag, redactSecrets(format(format, argA, argB))) }
+        override fun warn(format: String, vararg arguments: Any?) { FirefoxLog.w(shortTag, redactSecrets(format(format, *arguments))) }
+        override fun warn(msg: String, t: Throwable?) { FirefoxLog.w(shortTag, redactSecrets(msg), t) }
 
-        override fun error(msg: String) = FirefoxLog.e(shortTag, redactSecrets(msg))
-        override fun error(format: String, arg: Any?) = FirefoxLog.e(shortTag, redactSecrets(format(format, arg)))
-        override fun error(format: String, argA: Any?, argB: Any?) = FirefoxLog.e(shortTag, redactSecrets(format(format, argA, argB)))
-        override fun error(format: String, vararg arguments: Any?) = FirefoxLog.e(shortTag, redactSecrets(format(format, *arguments)))
-        override fun error(msg: String, t: Throwable?) = FirefoxLog.e(shortTag, redactSecrets(msg), t)
+        override fun error(msg: String) { FirefoxLog.e(shortTag, redactSecrets(msg)) }
+        override fun error(format: String, arg: Any?) { FirefoxLog.e(shortTag, redactSecrets(format(format, arg))) }
+        override fun error(format: String, argA: Any?, argB: Any?) { FirefoxLog.e(shortTag, redactSecrets(format(format, argA, argB))) }
+        override fun error(format: String, vararg arguments: Any?) { FirefoxLog.e(shortTag, redactSecrets(format(format, *arguments))) }
+        override fun error(msg: String, t: Throwable?) { FirefoxLog.e(shortTag, redactSecrets(msg), t) }
 
         private fun withCause(msg: String, t: Throwable?): String =
             if (t != null) "$msg: ${t.message}" else msg
