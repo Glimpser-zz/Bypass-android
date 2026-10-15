@@ -341,8 +341,8 @@ android {
         } else {
             throw new GradleException('signing.properties found but some entries are missing')
         }
-    } else {
-        throw new GradleException('signing.properties not found!')
+    } else if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+        throw new GradleException('signing.properties is required for release builds; debug builds can use Android debug signing.')
     }
 
     // r17c upstream (API 14); r23 on Apple Silicon, which has no r17 host
