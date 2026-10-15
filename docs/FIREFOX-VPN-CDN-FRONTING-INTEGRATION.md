@@ -60,3 +60,10 @@ The feature is still **not end-to-end implemented**. Firefox Account sign-in/tok
 - The transport uses the existing Bypass VPN service's socket-protection callback for Netty sockets. Android's platform TLS trust is used for now.
 - This is a transport primitive only. Bypass does not yet fetch/select the Mozilla server list, adapt its packet/TUN loop to open these streams, or connect this session to its existing local forwarding pipeline. No user traffic should be assumed to pass through Firefox at this point.
 - Build and device verification remain outstanding; copied transport code has not yet been validated against Bypass's exact dependency graph and Android build.
+
+
+## Connection orchestration
+
+- Added `FirefoxConnectionCoordinator` to run Guardian preflight, fetch Mozilla server candidates, optionally filter by country code, and attempt HTTP/2 connections until one succeeds.
+- The coordinator returns the chosen endpoint and live upstream session, or a typed sign-in/challenge/failure result. It deliberately does not claim the device VPN is connected.
+- The returned HTTP/2 session still needs to be integrated with the app's TUN packet forwarding and per-flow TCP handling. No user traffic is routed through it yet.
