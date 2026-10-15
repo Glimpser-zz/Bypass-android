@@ -8,6 +8,7 @@
  */
 package com.psiphon3.firefox
 
+import android.net.VpnService
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -48,6 +49,16 @@ class FirefoxCookieJar : CookieJar {
 }
 
 object FirefoxControlPlaneHttp {
+    /** Attach the active app VPN so control-plane sockets bypass its own TUN route. */
+    fun attachVpnService(service: VpnService) {
+        socketProtector = { socket -> service.protect(socket) }
+    }
+
+    /** Clear the reference when the VPN service is destroyed. */
+    fun detachVpnService() {
+        socketProtector = null
+    }
+
     @Volatile
     var socketProtector: ((Socket) -> Boolean)? = null
 
