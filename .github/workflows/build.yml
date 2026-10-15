@@ -330,9 +330,9 @@ jobs:
           retention-days: 1
 
   release:
-    if: github.event_name == 'workflow_dispatch' && needs.build-apk.outputs.release_enabled == 'true'
     name: Create GitHub Release
     needs: build-apk
+    if: ${{ github.event_name == 'workflow_dispatch' && needs.build-apk.outputs.release_enabled == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
