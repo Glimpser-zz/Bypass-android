@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.psiphon3.firefox.FirefoxAuthRepository
 import com.psiphon3.firefox.FirefoxSessionStore
+import com.psiphon3.firefox.FirefoxTransportSettingsStore
 import com.psiphon3.psiphonlibrary.TunnelManager
 import com.psiphon3.psiphonlibrary.TunnelVpnService
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,8 @@ class FirefoxVpnActivity : AppCompatActivity() {
     private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var auth: FirefoxAuthRepository
     private lateinit var email: EditText
+    private lateinit var edgeAddress: EditText
+    private lateinit var transportSettings: FirefoxTransportSettingsStore
     private lateinit var password: EditText
     private lateinit var code: EditText
     private lateinit var signInButton: Button
@@ -42,6 +45,7 @@ class FirefoxVpnActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         title = "Firefox VPN (experimental)"
         auth = FirefoxAuthRepository(FirefoxSessionStore(applicationContext))
+        transportSettings = FirefoxTransportSettingsStore(applicationContext)
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -59,6 +63,16 @@ class FirefoxVpnActivity : AppCompatActivity() {
             textSize = 14f
             setPadding(0, dp(8), 0, dp(16))
         }, matchWidth())
+
+        edgeAddress = EditText(this).apply {
+            hint = "Optional CDN edge IPv4 / hostname"
+            inputType = InputType.TYPE_CLASS_TEXT
+            setSingleLine(true)
+            setText(transportSettings.loadEdgeAddress().orEmpty())
+        }
+        content.addView(edgeAddress, matchWidth())
+        val saveEdgeButton = Button(this).apply { text = "Save edge address" }
+        content.addView(saveEdgeButton, matchWidth())
 
         email = EditText(this).apply {
             hint = "Firefox Account email"
@@ -99,6 +113,18 @@ class FirefoxVpnActivity : AppCompatActivity() {
         content.addView(status, matchWidth())
         setContentView(scroll)
 
+        saveEdgeButton.setOnClickListener {
+            try {
+                transportSettings.saveEdgeAddress(edgeAddress.text?.toString().orEmpty())
+                status.text = if (transportSettings.loadEdgeAddress() == null) {
+                    "Edge address cleared; using the Mozilla endpoint address."
+                } else {
+                    "Edge saved. TLS SNI remains the Mozilla endpoint hostname; the chosen edge must serve that hostname."
+                }
+            } catch (e: IllegalArgumentException) {
+                status.text = e.message ?: "Invalid edge address."
+            }
+        }
         signInButton.setOnClickListener { beginSignIn() }
         verifyButton.setOnClickListener { verifyCode() }
         connectButton.setOnClickListener { requestVpnPermission() }

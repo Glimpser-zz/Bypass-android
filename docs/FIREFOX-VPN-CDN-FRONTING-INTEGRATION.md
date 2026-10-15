@@ -96,3 +96,19 @@ The SOCKS listener must bind only to loopback, and the app must not advertise a 
 The branch now contains `FirefoxH2Socks5Server`, a loopback-only SOCKS5 CONNECT listener that opens a stream through an already-connected `UpstreamSession` and relays TCP bytes. `FirefoxConnectionCoordinator.connectWithSocks5()` combines upstream setup with listener startup and returns the listener/port for an eventual tunnel owner to manage.
 
 This is an intermediate transport milestone only. The SOCKS5 listener currently supports TCP CONNECT (not arbitrary UDP); DNS behavior depends on the existing tun2socks configuration. It has not been compiled or exercised against a real Guardian endpoint. The current Bypass `TunnelManager` does not yet call `connectWithSocks5()`, establish a Firefox-only tunnel lifecycle, or pass this listener port to `VpnManager.routeThroughTunnel()`. Do not expose this as a working VPN mode until those pieces and shutdown/error handling are integrated and tested.
+
+
+## Current experimental implementation
+
+The feature branch now has an in-app Firefox Account sign-in flow, encrypted session storage,
+an HTTP/2 upstream, a loopback SOCKS listener, and an experimental mode routed through the
+existing Android VPN service. The settings screen accepts an optional edge IPv4 address or
+hostname. When supplied, TCP connects to that address while TLS SNI remains the hostname from
+the selected Mozilla server record; this is not a guarantee that a third-party CDN will proxy
+the endpoint successfully.
+
+The current data plane is limited to TCP CONNECT plus DNS-over-TCP forwarded through the
+HTTP/2 upstream. General UDP traffic is not supported. Account security challenges are shown
+to the user and are not automatically bypassed. A successful APK build does not establish
+that the remote account flow, server policy, edge routing, or on-device data path works; those
+still require live-device testing.

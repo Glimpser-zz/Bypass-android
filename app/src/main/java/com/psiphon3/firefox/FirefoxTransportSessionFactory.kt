@@ -9,7 +9,10 @@ import java.io.IOException
  * intentionally does not guess endpoints or report a VPN as connected until connect()
  * has completed. It is not yet attached to Bypass's packet/TUN forwarding loop.
  */
-class FirefoxTransportSessionFactory {
+class FirefoxTransportSessionFactory(
+    private val edgeAddress: String? = null,
+    private val upstreamProxy: UpstreamProxyConfig? = null,
+) {
     suspend fun connect(candidate: FirefoxServerCandidate, proxyPass: GuardianControlPlane.ProxyPass): UpstreamSession =
         connect(candidate.host, candidate.port, proxyPass)
 
@@ -27,6 +30,8 @@ class FirefoxTransportSessionFactory {
             upstreamHost = host,
             upstreamPort = port,
             bearerToken = proxyPass.token,
+            upstreamProxy = upstreamProxy,
+            edgeAddress = edgeAddress,
         )
         try {
             session.connect()

@@ -8,8 +8,10 @@ import java.io.Closeable
 /** Owns the Firefox upstream and loopback SOCKS listener for one service lifetime. */
 class FirefoxTunnelRuntime(context: Context) : Closeable {
     private val sessionStore = FirefoxSessionStore(context.applicationContext)
+    private val transportSettings = FirefoxTransportSettingsStore(context.applicationContext)
     private val coordinator = FirefoxConnectionCoordinator(
-        FirefoxConnectionPreflight(sessionStore, FirefoxTokenRefresher(sessionStore)),
+        preflight = FirefoxConnectionPreflight(sessionStore, FirefoxTokenRefresher(sessionStore)),
+        factory = FirefoxTransportSessionFactory(edgeAddress = transportSettings.loadEdgeAddress()),
     )
 
     @Volatile
