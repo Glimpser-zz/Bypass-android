@@ -63,17 +63,17 @@ class FirefoxVpnActivity : AppCompatActivity() {
         email = EditText(this).apply {
             hint = "Firefox Account email"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            singleLine = true
+            setSingleLine(true)
         }
         password = EditText(this).apply {
             hint = "Firefox Account password"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            singleLine = true
+            setSingleLine(true)
         }
         code = EditText(this).apply {
             hint = "Email verification code"
             inputType = InputType.TYPE_CLASS_TEXT
-            singleLine = true
+            setSingleLine(true)
             visibility = View.GONE
         }
         content.addView(email, matchWidth())
