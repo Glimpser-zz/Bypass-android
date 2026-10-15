@@ -46,6 +46,7 @@ The integration branch now has these preparatory code changes:
 - OkHttp, coroutines, Netty HTTP/2, Netty proxy handlers, and Conscrypt dependencies added.
 - A new `com.psiphon3.firefox.GuardianControlPlane` client can request Guardian account status and a proxy pass when the caller supplies a valid Firefox access token. HTTP 406 challenge requirements are surfaced explicitly; this client does not bypass or fake the challenge.
 - Added `FirefoxControlPlaneHttp`, a shared OkHttp client with cookie persistence and socket-protection lifecycle hooks. The active `VpnService` must call `attachVpnService(this)` on startup and `detachVpnService()` on teardown before the client is used in a live VPN session.
-- Added `FirefoxSession` and `FirefoxSessionStore`; the latter persists access/refresh tokens in AndroidX encrypted preferences and checks access-token expiry. This is storage only: it does not authenticate the user or refresh tokens.
+- Added `FirefoxSession` and `FirefoxSessionStore`; the latter persists access/refresh tokens in AndroidX encrypted preferences and checks access-token expiry.
+- Added `FirefoxTokenRefresher` for refreshing an already-authorized OAuth session and persisting the rotated tokens. It does not perform password sign-in, two-factor authentication, or Fastly challenge handling, and it has not been validated against a live account.
 
 The feature is still **not end-to-end implemented**. Firefox Account sign-in/token refresh, challenge solving, server/edge selection, the HTTP/2 data plane, integration with Bypass's existing VPN lifecycle, and the mode selector remain outstanding. No successful build or real-network test has been claimed.
