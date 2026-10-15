@@ -7,6 +7,7 @@
  */
 package com.psiphon3.firefox
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -34,6 +35,8 @@ class FirefoxConnectionPreflight(
             } else {
                 existing
             }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (e: FirefoxTokenRefresher.RefreshException) {
             if (e.permanent) {
                 sessionStore.clear()
@@ -51,6 +54,8 @@ class FirefoxConnectionPreflight(
             }
             val pass = guardian.fetchProxyPass(session.accessToken)
             Result.Ready(status, pass)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (e: GuardianControlPlane.GuardianException) {
             if (e.challengeRequired) {
                 Result.ChallengeRequired(e.message ?: "Guardian challenge required")
