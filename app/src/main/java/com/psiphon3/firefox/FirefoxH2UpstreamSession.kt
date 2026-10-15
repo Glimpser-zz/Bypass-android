@@ -2,7 +2,6 @@ package com.psiphon3.firefox
 
 import android.os.Build
 import com.psiphon3.BuildConfig
-import com.psiphon3.firefox.FirefoxLog
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.Channel
 import io.netty.channel.ChannelFuture
@@ -125,7 +124,7 @@ data class UpstreamProxyConfig(
     enum class Type { SOCKS5, HTTP }
 }
 
-class H2UpstreamSession(
+class FirefoxH2UpstreamSession(
     private val upstreamHost: String,
     private val upstreamPort: Int,
     bearerToken: String,
@@ -133,7 +132,7 @@ class H2UpstreamSession(
     private val edgeAddress: String? = null,
 ) : UpstreamSession {
 
-    private val group = NioEventLoopGroup(1)
+    private val group = NioEventLoopGroup(1).also { FirefoxNettyLoggingBridge.install() }
 
     @Volatile private var currentBearerToken: String = bearerToken
 
