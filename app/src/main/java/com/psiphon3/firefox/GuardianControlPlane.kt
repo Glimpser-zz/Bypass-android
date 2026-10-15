@@ -108,7 +108,7 @@ class GuardianControlPlane(
                 .header("Authorization", "Bearer $accessToken")
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
-                .header("User-Agent", "Firefox-Android-VPN")
+                .header("User-Agent", "MozillaVPN/2.35.0 (sys:linux; iap:true)")
                 .apply {
                     if (method == "POST") post(RequestBody.create(null, ByteArray(0)))
                     else get()
