@@ -33,7 +33,8 @@ class FirefoxH2Socks5Server(
         check(upstream.isConnected) { "HTTP/2 upstream is not connected" }
         val socket = ServerSocket()
         socket.reuseAddress = false
-        socket.bind(InetSocketAddress(InetAddress.getLoopbackAddress(), requestedPort), 64)
+        // The UDP DNS relay advertises 127.0.0.1, so keep the TCP listener IPv4 too.
+        socket.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), requestedPort), 64)
         server = socket
         workers.execute {
             while (!closed.get()) {
