@@ -151,8 +151,6 @@ jobs:
     needs: build-aar
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    outputs:
-      release_enabled: ${{ steps.buildmode.outputs.release_enabled }}
 
     steps:
       - name: Checkout
@@ -169,35 +167,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq libtinfo5 python3-pip
 
-      - name: Select build mode
-        id: buildmode
-        run: |
-          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ] && [ -n "$FETCH_SCRIPT" ] && [ -n "$CHANNEL_ID" ] && [ -n "$SPONSOR_ID" ] && [ -n "$MAXMIND_KEY" ]; then
-            echo "release_enabled=true" >> "$GITHUB_OUTPUT"
-            echo "Release secrets found; building signed release APK."
-          else
-            echo "release_enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Release secrets are incomplete; building an unsigned debug APK for compile verification."
-          fi
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          FETCH_SCRIPT: ${{ secrets.FETCH_SERVER_LIST_SCRIPT }}
-          CHANNEL_ID: ${{ secrets.PSIPHON_PROPAGATION_CHANNEL_ID }}
-          SPONSOR_ID: ${{ secrets.PSIPHON_SPONSOR_ID }}
-          MAXMIND_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-
-      - name: Download GeoLite2 database
-        if: ${{ steps.buildmode.outputs.release_enabled == 'true' }}
-        run: |
-          curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}&suffix=tar.gz" \
-            | tar xz --strip-components=1 --wildcards '*/GeoLite2-Country.mmdb'
-          mv GeoLite2-Country.mmdb app/src/main/assets/GeoLite2-Country.mmdb
-
       - name: Fetch extra entries
-        if: ${{ steps.buildmode.outputs.release_enabled == 'true' }}
         continue-on-error: true
         uses: actions/checkout@v4
         with:
@@ -205,55 +175,26 @@ jobs:
           token: ${{ secrets.DATA_REPO_TOKEN }}
           path: extra-data
 
-      - name: Fetch server entries
-        if: ${{ steps.buildmode.outputs.release_enabled == 'true' }}
+      - name: Fetch server entries when release data is configured
         run: |
+          if [ -z "$FETCH_SCRIPT" ]; then
+            echo "No private server-list fetch script configured; creating debug-only empty list."
+            : > server_entries.txt
+            exit 0
+          fi
           pip3 install cryptography --quiet
-          printenv FETCH_SCRIPT > fetch_server_list.py
+          printf '%s' "$FETCH_SCRIPT" > fetch_server_list.py
           SERVER_ENTRIES_OUTPUT=server_entries.fetched.txt python3 fetch_server_list.py
           rm fetch_server_list.py
-
           if [ ! -s server_entries.fetched.txt ]; then
             echo "::error::no live server entries were fetched"
             exit 1
           fi
-
-          # Optional extras, appended after the live ones so live keeps dial
-          # priority. Absent in a plain checkout, so this must not be fatal.
-          EXTRA=""
-          for f in extra-data/extra_1.txt extra-data/extra_2.txt; do
-            if [ -s "$f" ]; then
-              EXTRA="$EXTRA $f"
-            fi
-          done
-
-          # shellcheck disable=SC2086  # word splitting of EXTRA is intended
-          cat server_entries.fetched.txt $EXTRA \
-            | awk '!seen[$0]++' > server_entries.txt
-
-          echo "server entries: $(wc -l < server_entries.txt)"
+          cp server_entries.fetched.txt server_entries.txt
         env:
           FETCH_SCRIPT: ${{ secrets.FETCH_SERVER_LIST_SCRIPT }}
           PSIPHON_REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY: ${{ secrets.PSIPHON_REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY }}
           PSIPHON_REMOTE_SERVER_LIST_URLS_JSON: ${{ secrets.PSIPHON_REMOTE_SERVER_LIST_URLS_JSON }}
-
-      - name: Create debug server-entry file
-        if: ${{ steps.buildmode.outputs.release_enabled != 'true' }}
-        run: : > server_entries.txt
-
-      - name: Set up signing
-        if: ${{ steps.buildmode.outputs.release_enabled == 'true' }}
-        run: |
-          echo "$KEYSTORE_B64" | base64 -d > release.keystore
-          printf 'STORE_FILE=../release.keystore\n' > signing.properties
-          printf 'STORE_PASSWORD=%s\n' "$STORE_PASSWORD" >> signing.properties
-          printf 'KEY_ALIAS=%s\n' "$KEY_ALIAS" >> signing.properties
-          printf 'KEY_PASSWORD=%s\n' "$KEY_PASSWORD" >> signing.properties
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Set version info
         id: version
@@ -288,15 +229,7 @@ jobs:
           export PSIPHON_EMBEDDED_SERVER_LIST_FILE=server_entries.txt
           export APP_VERSION_NAME=${{ steps.version.outputs.calver }}
           export APP_VERSION_RUN=${{ github.run_number }}
-          if [ "${{ steps.buildmode.outputs.release_enabled }}" = "true" ]; then
-            if [ "${{ inputs.clean_build }}" = "true" ]; then
-              ./gradlew clean assembleRelease
-            else
-              ./gradlew assembleRelease
-            fi
-          else
-            ./gradlew clean assembleDebug
-          fi
+          ./gradlew clean assembleDebug
         env:
           PSIPHON_PROPAGATION_CHANNEL_ID: ${{ secrets.PSIPHON_PROPAGATION_CHANNEL_ID || 'debug-channel' }}
           PSIPHON_SPONSOR_ID: ${{ secrets.PSIPHON_SPONSOR_ID || 'debug-sponsor' }}
@@ -324,15 +257,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shirokhorshid-apk
-          path: |
-            app/build/outputs/apk/release/ShirOKhorshid-release.apk
-            app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 1
 
   release:
+    if: false # Feature branch builds are debug artifacts only; never publish them as releases.
     name: Create GitHub Release
     needs: build-apk
-    if: ${{ github.event_name == 'workflow_dispatch' && needs.build-apk.outputs.release_enabled == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
