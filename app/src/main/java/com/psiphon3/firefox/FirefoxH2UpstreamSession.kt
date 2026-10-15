@@ -132,7 +132,7 @@ class FirefoxH2UpstreamSession(
     private val edgeAddress: String? = null,
 ) : UpstreamSession {
 
-    private val group = NioEventLoopGroup(1).also { FirefoxNettyLoggingBridge.install() }
+    private val group = NioEventLoopGroup(1).also { NettyLoggingBridge.install() }
 
     @Volatile private var currentBearerToken: String = bearerToken
 
