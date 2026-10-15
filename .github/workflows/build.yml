@@ -149,7 +149,7 @@ jobs:
   build-apk:
     name: Build APK
     needs: build-aar
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
 
     steps:
@@ -165,7 +165,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq python3-pip
+          sudo apt-get install -y -qq libtinfo5 python3-pip
 
       - name: Fetch extra entries
         continue-on-error: true
