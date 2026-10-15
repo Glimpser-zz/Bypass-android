@@ -74,3 +74,18 @@ The feature is still **not end-to-end implemented**. Firefox Account sign-in/tok
 - Server discovery now falls back to a server record's hostname and port when no usable CONNECT endpoint is present in its protocol list.
 - The coordinator tries at most four randomized candidates per attempt, rather than potentially serially waiting on every server in a country. A caller may retry after a failure.
 - These changes improve bounded failure behavior; they do not replace an Android TUN-to-stream data plane or substitute for build and device testing.
+
+
+## Existing Bypass VPN routing: integration boundary
+
+A source review confirms that Bypass already owns the Android `VpnService` and uses `VpnManager.routeThroughTunnel(socksProxyPort)` to start its native tun2socks path. `TunnelManager` currently calls this with the Psiphon core's local SOCKS port after the Psiphon tunnel reports connected.
+
+That means the Firefox mode cannot be implemented correctly by only changing `UpstreamProxyUrl`: that setting configures the Psiphon core's upstream connections and would create a layered connection, not replace the Psiphon data plane.
+
+The next implementation stage needs three explicit lifecycle pieces before UI exposure:
+
+1. A loopback SOCKS5 listener whose CONNECT requests open streams on `UpstreamSession` and relay bytes in both directions.
+2. A mutually exclusive tunnel-start path in `TunnelManager` that skips starting the Psiphon core for Firefox mode, establishes the existing Android VPN interface, and passes the listener's port to `VpnManager.routeThroughTunnel(...)`.
+3. A stop/revoke/network-change lifecycle that closes accepted sockets, the listener, HTTP/2 streams, and the upstream session without leaving traffic routed into a dead port.
+
+The SOCKS listener must bind only to loopback, and the app must not advertise a connected VPN until the Android VPN interface, listener, and upstream session are all ready. This stage has not yet been implemented or tested; the current coordinator only opens the upstream HTTP/2 session.
