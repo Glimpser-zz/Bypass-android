@@ -252,7 +252,7 @@ class FirefoxAuthRepository(
     }
 
     private fun String.toHttpUrlOrThrow(): HttpUrl = try {
-        HttpUrl.get(this)
+        this.toHttpUrl()
     } catch (e: IllegalArgumentException) {
         throw AuthException("Invalid Firefox Accounts URL.")
     }

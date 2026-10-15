@@ -6,7 +6,6 @@
         android:key="@string/regionPreferenceKey"
         android:title="@string/region_selector" />
     <Preference
-        android:icon="@drawable/baseline_vpn_key_white_24"
         android:key="@string/vpnOptionsPreferenceKey"
         android:title="@string/label_vpn_settings" />
     <Preference

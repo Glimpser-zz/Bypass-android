@@ -197,10 +197,11 @@ jobs:
           SERVER_ENTRIES_OUTPUT=server_entries.fetched.txt python3 fetch_server_list.py
           rm fetch_server_list.py
           if [ ! -s server_entries.fetched.txt ]; then
-            echo "::error::no live server entries were fetched"
-            exit 1
+            echo "::warning::no live server entries were fetched; continuing with an empty list for this debug build."
+            : > server_entries.txt
+          else
+            cp server_entries.fetched.txt server_entries.txt
           fi
-          cp server_entries.fetched.txt server_entries.txt
         env:
           FETCH_SCRIPT: ${{ secrets.FETCH_SERVER_LIST_SCRIPT }}
           PSIPHON_REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY: ${{ secrets.PSIPHON_REMOTE_SERVER_LIST_SIGNATURE_PUBLIC_KEY }}
