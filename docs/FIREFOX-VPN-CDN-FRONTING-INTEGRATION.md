@@ -51,3 +51,12 @@ The integration branch now has these preparatory code changes:
 - Added `FirefoxConnectionPreflight` to coordinate local session expiry checks, token refresh, Guardian account status and proxy-pass retrieval. It reports sign-in-required, challenge-required and retryable failures separately. A successful preflight is not a connected tunnel; it still does not route user traffic.
 
 The feature is still **not end-to-end implemented**. Firefox Account sign-in/token refresh, challenge solving, server/edge selection, the HTTP/2 data plane, integration with Bypass's existing VPN lifecycle, and the mode selector remain outstanding. No successful build or real-network test has been claimed.
+
+
+## HTTP/2 upstream transport port (not yet end-to-end)
+
+- Ported the Firefox VPN HTTP/2 upstream session implementation into `FirefoxH2UpstreamSession`, including HTTP/2 CONNECT streams, TLS/ALPN, stream lifecycle and bearer proxy-pass updates.
+- Added `FirefoxTransportSessionFactory`, which accepts an explicit server host/port and a Guardian proxy pass, then establishes and verifies the upstream session.
+- The transport uses the existing Bypass VPN service's socket-protection callback for Netty sockets. Android's platform TLS trust is used for now.
+- This is a transport primitive only. Bypass does not yet fetch/select the Mozilla server list, adapt its packet/TUN loop to open these streams, or connect this session to its existing local forwarding pipeline. No user traffic should be assumed to pass through Firefox at this point.
+- Build and device verification remain outstanding; copied transport code has not yet been validated against Bypass's exact dependency graph and Android build.
