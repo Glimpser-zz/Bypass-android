@@ -74,16 +74,18 @@ internal class FirefoxSocks5UdpDnsRelay(
 
         val answer = try {
             val stream = runBlocking { upstream.openStream(parsed.host, DNS_PORT) }
-            stream.use {
-                val out = DataOutputStream(it.output)
+            try {
+                val out = DataOutputStream(stream.output)
                 out.writeShort(query.size)
                 out.write(query)
                 out.flush()
 
-                val input = DataInputStream(it.input)
+                val input = DataInputStream(stream.input)
                 val size = input.readUnsignedShort()
                 if (size !in 1..MAX_DNS_BYTES) throw IOException("Invalid DNS response size: $size")
                 ByteArray(size).also { bytes -> input.readFully(bytes) }
+            } finally {
+                stream.close()
             }
         } catch (e: Exception) {
             FirefoxLog.d(TAG, "UDP DNS query failed: ${e.message}")
